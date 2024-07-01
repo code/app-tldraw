@@ -31,14 +31,26 @@ import { cleanupText, isRightToLeftLanguage } from './utils/text/text'
 
 /** @public */
 export interface TLExternalContentProps {
-	// The maximum dimension (width or height) of an image. Images larger than this will be rescaled to fit. Defaults to infinity.
-	maxImageDimension: number
-	// The maximum size (in bytes) of an asset. Assets larger than this will be rejected. Defaults to 10mb (10 * 1024 * 1024).
-	maxAssetSize: number
-	// The mime types of images that are allowed to be handled. Defaults to DEFAULT_SUPPORTED_IMAGE_TYPES.
-	acceptedImageMimeTypes: readonly string[]
-	// The mime types of videos that are allowed to be handled. Defaults to DEFAULT_SUPPORT_VIDEO_TYPES.
-	acceptedVideoMimeTypes: readonly string[]
+	/**
+	 * The maximum dimension (width or height) of an image. Images larger than this will be rescaled
+	 * to fit. Defaults to infinity.
+	 */
+	maxImageDimension?: number
+	/**
+	 * The maximum size (in bytes) of an asset. Assets larger than this will be rejected. Defaults
+	 * to 10mb (10 * 1024 * 1024).
+	 */
+	maxAssetSize?: number
+	/**
+	 * The mime types of images that are allowed to be handled. Defaults to
+	 * DEFAULT_SUPPORTED_IMAGE_TYPES.
+	 */
+	acceptedImageMimeTypes?: readonly string[]
+	/**
+	 * The mime types of videos that are allowed to be handled. Defaults to
+	 * DEFAULT_SUPPORT_VIDEO_TYPES.
+	 */
+	acceptedVideoMimeTypes?: readonly string[]
 }
 
 export function registerDefaultExternalContentHandlers(
@@ -48,7 +60,7 @@ export function registerDefaultExternalContentHandlers(
 		maxAssetSize,
 		acceptedImageMimeTypes,
 		acceptedVideoMimeTypes,
-	}: TLExternalContentProps,
+	}: Required<TLExternalContentProps>,
 	{ toasts, msg }: { toasts: TLUiToastsContextType; msg: ReturnType<typeof useTranslation> },
 	persistenceKey?: string
 ) {
@@ -136,10 +148,10 @@ export function registerDefaultExternalContentHandlers(
 				description:
 					doc.head.querySelector('meta[property="og:description"]')?.getAttribute('content') ?? '',
 			}
-			if (meta.image.startsWith('/')) {
+			if (!meta.image.startsWith('http')) {
 				meta.image = new URL(meta.image, url).href
 			}
-			if (meta.favicon.startsWith('/')) {
+			if (!meta.favicon.startsWith('http')) {
 				meta.favicon = new URL(meta.favicon, url).href
 			}
 		} catch (error) {
@@ -450,14 +462,15 @@ export async function createShapesForAssets(
 	const currentPoint = Vec.From(position)
 	const partials: TLShapePartial[] = []
 
-	for (const asset of assets) {
+	for (let i = 0; i < assets.length; i++) {
+		const asset = assets[i]
 		switch (asset.type) {
 			case 'bookmark': {
 				partials.push({
 					id: createShapeId(),
 					type: 'bookmark',
-					x: currentPoint.x - 150,
-					y: currentPoint.y - 160,
+					x: currentPoint.x,
+					y: currentPoint.y,
 					opacity: 1,
 					props: {
 						assetId: asset.id,
@@ -465,15 +478,15 @@ export async function createShapesForAssets(
 					},
 				})
 
-				currentPoint.x += 300
+				currentPoint.x += 300 // BOOKMARK_WIDTH
 				break
 			}
 			case 'image': {
 				partials.push({
 					id: createShapeId(),
 					type: 'image',
-					x: currentPoint.x - asset.props.w / 2,
-					y: currentPoint.y - asset.props.h / 2,
+					x: currentPoint.x,
+					y: currentPoint.y,
 					opacity: 1,
 					props: {
 						assetId: asset.id,
@@ -489,8 +502,8 @@ export async function createShapesForAssets(
 				partials.push({
 					id: createShapeId(),
 					type: 'video',
-					x: currentPoint.x - asset.props.w / 2,
-					y: currentPoint.y - asset.props.h / 2,
+					x: currentPoint.x,
+					y: currentPoint.y,
 					opacity: 1,
 					props: {
 						assetId: asset.id,
